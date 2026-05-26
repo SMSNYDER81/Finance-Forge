@@ -1,5 +1,5 @@
 {
-  "name": "FinanceForge",
+  "name": "Finance Forge",
   "description": "FinanceForge is a comprehensive, client-side financial planning suite that runs entirely in the browser using secure local storage. Features a balance sheet aggregator, dynamic budget planner, encrypted backups, CSV statement parser, advanced portfolio allocator, Monte Carlo simulation, and user-provided Gemini deep reasoning integrations.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
