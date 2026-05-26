@@ -4,20 +4,10 @@ import {
   BookOpen, 
   Search, 
   Sparkles, 
-  Share2, 
-  Globe, 
-  Laptop, 
-  Smartphone, 
-  Copy, 
-  Check, 
   ArrowRight, 
-  TrendingUp, 
-  CheckCircle, 
   HelpCircle, 
-  BookMarked,
-  Layers,
   ChevronRight,
-  Calculator
+  AlertTriangle
 } from 'lucide-react';
 
 interface Article {
@@ -34,12 +24,6 @@ interface Article {
 export default function EducationCenter() {
   const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [copied, setCopied] = useState(false);
-  
-  // SEO simulator state
-  const [seoTitle, setSeoTitle] = useState('FinanceForge - Personal Retirement Wealth & RMD Planner');
-  const [seoDescription, setSeoDescription] = useState('Secure, client-side portfolio allocations, cash flow projections, and SECURE Act 2.0 RMD tax simulators. Calculate Traditional, SEP, SIMPLE and Roth IRAs safely with zero servers.');
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   const articles: Article[] = [
     {
@@ -190,39 +174,22 @@ export default function EducationCenter() {
     art.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const headTagCode = `<!-- Copy and paste inside the <head> tag of your index.html file -->
-<title>${seoTitle}</title>
-<meta name="description" content="${seoDescription}" />
-
-<!-- OpenGraph Metadata (LinkedIn / Twitter Preview Support) -->
-<meta property="og:title" content="${seoTitle}" />
-<meta property="og:description" content="${seoDescription}" />
-<meta property="_og:type" content="website" />
-<meta name="twitter:card" content="summary_large_image" />`;
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(headTagCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
-    <div className="space-y-8 animate-slide-in" id="education-seo-center-view">
-      
-      {/* Upper Banner */}
+    <div className="space-y-8 animate-slide-in" id="education-tax-center-view">
+        {/* Upper Banner */}
       <div className="bg-white rounded-3xl p-6 md:p-8 border border-neutral-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1.5 max-w-2xl">
           <div className="flex items-center gap-2">
             <span className="bg-neutral-900 text-white font-mono text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-sm font-semibold">
-              SEO & Authority Module
+              Tax Authority Library
             </span>
-            <span className="text-xs text-neutral-400 font-mono">• Financial Education Library</span>
+            <span className="text-xs text-neutral-400 font-mono">• Financial Education & Disclaimers</span>
           </div>
           <h2 className="text-2xl font-bold text-neutral-900 tracking-tight font-sans">
-            Tax Authority Library & SEO Optimization
+            Tax Authority Library
           </h2>
           <p className="text-neutral-500 text-xs font-light leading-relaxed">
-            Boost authority with search-optimized articles outlining SECURE Act 2.0 and IRA constraints. Leverage our SERP Preview Simulator to audit meta tag formats before deploying to production.
+            Detailed educational guidelines outlining SECURE Act 2.0 rules, retirement account ledgers, and stochastic Monte Carlo simulation models.
           </p>
         </div>
       </div>
@@ -241,7 +208,7 @@ export default function EducationCenter() {
                   <BookOpen className="w-4 h-4 text-neutral-700" />
                   <span>Authority Publications Directory</span>
                 </h3>
-                <p className="text-[11px] text-neutral-450 font-light">Interactive resource material for financial advisory SEO indexing.</p>
+                <p className="text-[11px] text-neutral-450 font-light">Educational guidelines on IRS and SECURE Act 2.0 compliance laws.</p>
               </div>
 
               {/* Quick Search */}
@@ -377,178 +344,46 @@ export default function EducationCenter() {
           </div>
 
           {/* Cloudflare Pages / GitHub Pages Instructions Checklist */}
-          <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-xs space-y-4">
-            <h3 className="text-xs font-mono uppercase text-neutral-400 tracking-widest font-bold">
-              Deployment Architecture (Cloudflare & GitHub)
-            </h3>
-            <p className="text-xs text-neutral-500 font-light leading-relaxed">
-              FinanceForge is compiled completely as a <strong>Client-Side SPA (TypeScript/React)</strong>. This means you do not need active Express database containers. You can host it completely 100% free with limitless scale.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <div className="p-4 bg-neutral-50 border rounded-2xl space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 bg-neutral-900 text-white font-mono text-[10px] rounded-full flex items-center justify-center font-bold">1</span>
-                  <strong className="text-xs text-neutral-800">GitHub Pages Route</strong>
-                </div>
-                <p className="text-[11px] text-neutral-500 leading-relaxed font-light">
-                  Push your repository connection online. Under settings, toggle GitHub Pages source to <em>GitHub Actions</em>. It will build and serve your static <code>dist/</code> folder globally in seconds under HTTPS.
-                </p>
-              </div>
-
-              <div className="p-4 bg-neutral-50 border rounded-2xl space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 bg-neutral-900 text-white font-mono text-[10px] rounded-full flex items-center justify-center font-bold">2</span>
-                  <strong className="text-xs text-neutral-800">Cloudflare Pages</strong>
-                </div>
-                <p className="text-[11px] text-neutral-500 leading-relaxed font-light">
-                  Simply connect your repository. Choose <strong>Vite</strong> as the framework preset, set build script to <code>npm run build</code>, directory to <code>dist</code>, and assign a custom domain.
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Section removed per customer instructions */}
 
         </div>
 
-        {/* Right Column: SEO SandboxSERP Simulator */}
+        {/* Right Column: Prominent Legal & Advice Disclaimer */}
         <div className="lg:col-span-1 space-y-6">
           
-          <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-xs space-y-5">
-            <div className="space-y-1">
-              <h3 className="text-xs font-mono uppercase text-neutral-400 tracking-widest font-bold">
-                Google SERP Simulator
+          <div className="bg-neutral-900 text-white rounded-3xl p-6 border border-neutral-800 shadow-xl space-y-5">
+            <div className="space-y-1.5 pb-2 border-b border-neutral-800">
+              <h3 className="text-xs font-mono uppercase text-amber-400 tracking-widest font-bold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                <span>Liability Disclaimer</span>
               </h3>
-              <p className="text-[11px] text-neutral-500 font-light">See and optimize how your app would render in organic Google search listings.</p>
+              <p className="text-[11px] text-neutral-400 font-sans tracking-wide">
+                This website is a free client-side utility. Read below to understand our limits of liability.
+              </p>
             </div>
 
-            {/* Title / Description Editors */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-4 text-xs font-light text-neutral-305 leading-relaxed">
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider font-mono">Page Meta Title</label>
-                <input 
-                  type="text"
-                  maxLength={70}
-                  value={seoTitle}
-                  onChange={(e) => setSeoTitle(e.target.value)}
-                  className="w-full bg-neutral-50 border rounded-xl px-3 py-2 text-xs font-semibold text-neutral-800 focus:outline-hidden"
-                />
-                <div className="flex justify-between text-[9px] font-mono text-neutral-400">
-                  <span>Recomm: 50-60 chars</span>
-                  <span className={seoTitle.length > 60 ? 'text-amber-600 font-bold' : ''}>
-                    {seoTitle.length} characters
-                  </span>
-                </div>
+                <strong className="text-neutral-100 block text-xs font-medium">Not Professional Advice</strong>
+                <p className="text-[11px] text-neutral-400">
+                  The calculators, tools, RMD planners, portfolio customizers, and automated AI suggestions generated by FinanceForge are designed solely for hypothetical modeling & general educational use. They under no circumstances constitute, and must never be used as a substitute for, professional legal, financial, or licensed tax advice.
+                </p>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider font-mono">Meta Description Snippet</label>
-                <textarea 
-                  rows={3}
-                  maxLength={160}
-                  value={seoDescription}
-                  onChange={(e) => setSeoDescription(e.target.value)}
-                  className="w-full bg-neutral-50 border rounded-xl px-3 py-2 text-xs font-light text-neutral-800 focus:outline-hidden resize-none leading-relaxed"
-                />
-                <div className="flex justify-between text-[9px] font-mono text-neutral-400">
-                  <span>Recomm: 120-153 chars</span>
-                  <span className={seoDescription.length > 153 ? 'text-amber-600 font-bold' : ''}>
-                    {seoDescription.length} characters
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Toggle Simulator Device */}
-            <div className="flex items-center gap-2 border-t pt-4">
-              <button 
-                type="button"
-                onClick={() => setPreviewDevice('desktop')}
-                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] uppercase font-mono font-bold cursor-pointer transition-colors ${
-                  previewDevice === 'desktop' ? 'bg-neutral-900 border-neutral-900 text-white' : 'bg-neutral-50 text-neutral-500'
-                }`}
-              >
-                <Laptop className="w-3.5 h-3.5" />
-                <span>Desktop</span>
-              </button>
-              <button 
-                type="button"
-                onClick={() => setPreviewDevice('mobile')}
-                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] uppercase font-mono font-bold cursor-pointer transition-colors ${
-                  previewDevice === 'mobile' ? 'bg-neutral-900 border-neutral-900 text-white' : 'bg-neutral-50 text-neutral-500'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Mobile</span>
-              </button>
-            </div>
-
-            {/* Simulated Google Listing Card */}
-            <div className="bg-neutral-100 rounded-2xl p-4 border space-y-1.5 select-none overflow-hidden max-w-full">
-              {previewDevice === 'desktop' ? (
-                // Google Desktop View
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 font-light truncate">
-                    <span className="bg-neutral-250 w-4.5 h-4.5 rounded-full flex items-center justify-center text-[8px] font-bold border shrink-0">F</span>
-                    <span className="truncate">https://financeforge.app</span>
-                    <span>›</span>
-                    <span className="truncate">tax-planner</span>
-                  </div>
-                  <h4 className="text-sm font-semibold text-blue-800 hover:underline cursor-pointer leading-tight line-clamp-1">
-                    {seoTitle}
-                  </h4>
-                  <p className="text-[11px] text-neutral-600 font-light leading-snug line-clamp-3">
-                    <span className="text-neutral-400 font-mono text-[10px]">{new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} — </span>
-                    {seoDescription || "Please provide a meta description metadata payload."}
-                  </p>
-                </div>
-              ) : (
-                // Google Mobile View
-                <div className="space-y-1 flex flex-col">
-                  <div className="flex items-center gap-2 text-xs font-light text-neutral-600 shrink-0">
-                    <div className="w-5 h-5 bg-neutral-200 rounded-full flex items-center justify-center font-bold text-[9px]">F</div>
-                    <div className="flex flex-col text-[10px] leading-tight">
-                      <span className="font-semibold text-neutral-800">FinanceForge</span>
-                      <span className="text-neutral-400 text-[9px]">https://financeforge.app</span>
-                    </div>
-                  </div>
-                  <h4 className="text-[13px] font-semibold text-blue-800 hover:underline cursor-pointer leading-tight line-clamp-2 pt-1">
-                    {seoTitle}
-                  </h4>
-                  <p className="text-[11px] text-neutral-600 font-light leading-snug line-clamp-3">
-                    {seoDescription || "Please provide a meta description metadata payload."}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Generated Code Snippet Card */}
-            <div className="space-y-2 border-t pt-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono uppercase text-neutral-400 font-semibold tracking-wider">Export Head Tags</span>
-                <button
-                  type="button"
-                  onClick={copyToClipboard}
-                  className="text-[10px] text-neutral-600 hover:text-black font-semibold flex items-center gap-1 font-mono hover:underline cursor-pointer"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3 h-3 text-emerald-500" />
-                      <span className="text-emerald-500 font-bold">COPIED!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3" />
-                      <span>COPY CODE</span>
-                    </>
-                  )}
-                </button>
+              <div className="space-y-1 border-t border-neutral-800 pt-3">
+                <strong className="text-neutral-100 block text-xs font-medium">Zero-Warranty Processing</strong>
+                <p className="text-[11px] text-neutral-400">
+                  All metrics reside completely inside your local web browser sandbox context. No warranty or warranty guarantee is made regarding mathematical precision, omissions, or applicability to your unique profile.
+                </p>
               </div>
 
-              <div className="bg-neutral-900 rounded-xl p-3 text-[10.5px] font-mono text-neutral-350 leading-relaxed border overflow-x-auto max-h-40 whitespace-pre">
-                {headTagCode}
+              <div className="space-y-1 border-t border-neutral-800 pt-3">
+                <strong className="text-neutral-100 block text-xs font-medium">Mandatory Consultation</strong>
+                <p className="text-[11px] text-neutral-400">
+                  IRS distribution timelines and SECURE Act thresholds are incredibly complex. Always consult a Certified Public Accountant (CPA) or a certified financial planner before taking real-world tax actions or withdrawals.
+                </p>
               </div>
             </div>
-
           </div>
 
         </div>

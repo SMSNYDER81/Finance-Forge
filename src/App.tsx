@@ -320,7 +320,7 @@ export default function App() {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>SEO & Tax Library</span>
+              <span>Tax Library</span>
             </button>
 
             <button
@@ -464,7 +464,9 @@ export default function App() {
       <footer className="bg-white border-t border-neutral-200 py-6 text-center text-[10px] font-mono text-neutral-400 select-none">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2.5">
           <span>FinanceForge v1.1.0 • Privacy Secured Cockpit</span>
-          <span>All mathematics are compiled stochastically within the browser context.</span>
+          <span className="max-w-md sm:text-right text-[9px] text-neutral-400 leading-normal font-sans">
+            <strong>Disclaimer:</strong> Free educational tool. Calculations and AI outputs are for illustrative simulations only and do not constitute professional financial, investment, legal, or tax advice.
+          </span>
         </div>
       </footer>
 
