@@ -47,8 +47,8 @@ export function TickerSearchCombobox({
         setIsOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   // Sync text input with parent state when dropdown is NOT open
@@ -176,6 +176,7 @@ export function TickerSearchCombobox({
       registerDynamicTicker(cleanSym, name, type);
     }
     onChange(cleanSym);
+    setQuery(`${cleanSym} - ${name}`);
     setIsOpen(false);
   };
 
