@@ -1,6 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Portfolio, PortfolioAllocation } from '../types';
-import { calculateRebalancing, getTickerStats, TICKER_DETAILS } from '../utils/calculators';
+import { 
+  calculateRebalancing, 
+  getTickerStats, 
+  TICKER_DETAILS, 
+  registerDynamicTicker, 
+  DYNAMIC_TICKER_REGISTRY 
+} from '../utils/calculators';
 import { 
   Plus, 
   Trash2, 
@@ -9,8 +15,240 @@ import {
   ArrowRightLeft, 
   HelpCircle, 
   TrendingUp, 
-  Layers 
+  Layers,
+  Search,
+  Globe,
+  Loader2
 } from 'lucide-react';
+
+interface TickerSearchComboboxProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+}
+
+export function TickerSearchCombobox({
+  value,
+  onChange,
+  placeholder = 'Search tickers (e.g., AAPL)...',
+  className = ''
+}: TickerSearchComboboxProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [apiResults, setApiResults] = useState<{ symbol: string; name: string; type: string }[]>([]);
+  const [isLoadingApi, setIsLoadingApi] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filter local & registered tickers based on query
+  const localMatchResults = useMemo(() => {
+    const term = query.trim().toUpperCase();
+    const matches: { symbol: string; name: string; class: string; isLocal: boolean }[] = [];
+
+    // Check pre-coded TICKER_DETAILS
+    Object.keys(TICKER_DETAILS).forEach(sym => {
+      const details = TICKER_DETAILS[sym];
+      if (sym.includes(term) || details.name.toUpperCase().includes(term)) {
+        matches.push({
+          symbol: sym,
+          name: details.name,
+          class: details.class,
+          isLocal: true
+        });
+      }
+    });
+
+    // Check dynamically registered tickers
+    Object.keys(DYNAMIC_TICKER_REGISTRY).forEach(sym => {
+      const details = DYNAMIC_TICKER_REGISTRY[sym];
+      if (sym.includes(term) || details.name.toUpperCase().includes(term)) {
+        // Prevent duplicates
+        if (!TICKER_DETAILS[sym]) {
+          matches.push({
+            symbol: sym,
+            name: details.name,
+            class: details.class,
+            isLocal: false
+          });
+        }
+      }
+    });
+
+    return matches;
+  }, [query]);
+
+  // Handle Debounced public API Search
+  useEffect(() => {
+    if (!query) {
+      setApiResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsLoadingApi(true);
+      try {
+        const encoded = encodeURIComponent(query.trim().toUpperCase());
+        const response = await fetch(`https://corsproxy.io/?url=https%3A%2F%2Fquery1.finance.yahoo.com%2Fv1%2Ffinance%2Fsearch%3Fq%3D${encoded}`);
+        if (response.ok) {
+          const data = await response.json();
+          const quotes = data.quotes || [];
+          // Map to standard layout
+          const results = quotes
+            .filter((q: any) => q.symbol)
+            .map((q: any) => ({
+              symbol: q.symbol.toUpperCase(),
+              name: q.shortname || q.longname || q.symbol,
+              type: q.quoteType || 'EQUITY'
+            }));
+          setApiResults(results);
+        }
+      } catch (err) {
+        console.error("Public security search index failure:", err);
+      } finally {
+        setIsLoadingApi(false);
+      }
+    }, 400); // 400ms debounce
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const stats = useMemo(() => {
+    return getTickerStats(value);
+  }, [value]);
+
+  const handleSelect = (symbol: string, name: string, type?: string) => {
+    const cleanSym = symbol.toUpperCase().trim();
+    // Register dynamically if not already indexed
+    if (!TICKER_DETAILS[cleanSym] && !DYNAMIC_TICKER_REGISTRY[cleanSym]) {
+      registerDynamicTicker(cleanSym, name, type);
+    }
+    onChange(cleanSym);
+    setQuery('');
+    setIsOpen(false);
+  };
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      {/* Input container */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-grow">
+          <input
+            type="text"
+            placeholder={placeholder}
+            value={isOpen ? query : (value ? `${value} - ${stats.name}` : '')}
+            onFocus={() => {
+              setIsOpen(true);
+              setQuery('');
+            }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setIsOpen(true);
+            }}
+            className="w-full bg-white border border-neutral-200 rounded-xl text-xs pl-8 pr-12 py-1.5 focus:outline-hidden focus:ring-1 focus:ring-neutral-400 text-neutral-800"
+          />
+          <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          
+          {isOpen && isLoadingApi && (
+            <Loader2 className="w-3.5 h-3.5 text-neutral-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+          )}
+        </div>
+        {isOpen && (
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="text-[10px] text-neutral-500 hover:text-neutral-900 border px-1.5 py-1 rounded bg-neutral-50 cursor-pointer"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown Floating list */}
+      {isOpen && (
+        <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border rounded-2xl shadow-xl max-h-72 overflow-y-auto p-2 scrollbar-thin">
+          
+          {/* Section: Local / Presets */}
+          {localMatchResults.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest px-2.5 py-1 block">Local Ticker Index</span>
+              {localMatchResults.slice(0, 8).map((match) => (
+                <button
+                  key={match.symbol}
+                  type="button"
+                  onClick={() => handleSelect(match.symbol, match.name)}
+                  className="w-full flex items-center justify-between text-left px-2.5 py-1.5 hover:bg-neutral-50 rounded-lg text-xs cursor-pointer"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-neutral-800">{match.symbol}</span>
+                    <span className="text-[10px] text-neutral-400 line-clamp-1">{match.name}</span>
+                  </div>
+                  <span className="text-[9px] font-mono text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded-sm">
+                    {match.class}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Section: Public Search Results */}
+          {query.trim().length > 0 && (
+            <div className="mt-3 border-t pt-2 space-y-1">
+              <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest px-2.5 py-1 block">Yahoo Public Index</span>
+              
+              {apiResults.length === 0 && !isLoadingApi && (
+                <p className="text-[10px] text-neutral-400 italic px-2.5 py-1 font-light">No public tickers found matching search query.</p>
+              )}
+
+              {apiResults.slice(0, 10).map((apiItem) => {
+                // Skip if already rendered in local matches
+                if (localMatchResults.some((m) => m.symbol === apiItem.symbol)) return null;
+
+                return (
+                  <button
+                    key={apiItem.symbol}
+                    type="button"
+                    onClick={() => handleSelect(apiItem.symbol, apiItem.name, apiItem.type)}
+                    className="w-full flex items-center justify-between text-left px-2.5 py-1.5 hover:bg-neutral-50 rounded-lg text-xs cursor-pointer"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-neutral-800 flex items-center gap-1">
+                        <Globe className="w-2.5 h-2.5 text-blue-500 animate-pulse" />
+                        {apiItem.symbol}
+                      </span>
+                      <span className="text-[10px] text-neutral-400 line-clamp-1">{apiItem.name}</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded-sm uppercase">
+                      {apiItem.type.substring(0, 12)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* If everything is empty */}
+          {localMatchResults.length === 0 && query.trim().length === 0 && (
+            <div className="p-4 text-center text-[11px] text-neutral-400 font-light">
+              Type or search top stock or bond tickers (e.g., AAPL, SPY, QQQ, BTC)...
+            </div>
+          )}
+
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface PortfolioCustomizerProps {
   portfolios: Portfolio[];
@@ -330,20 +568,16 @@ export default function PortfolioCustomizer({
 
           {/* Quick allocate target asset form */}
           <form onSubmit={handleAddAllocation} className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-neutral-50 p-4 border rounded-2xl items-end">
-            <div className="md:col-span-5 space-y-1">
-              <span className="text-[10px] font-mono text-neutral-400 uppercase">Ticker Index</span>
-              <select
+            <div className="md:col-span-6 space-y-1">
+              <span className="text-[10px] font-mono text-neutral-400 uppercase">Ticker / Asset (Local or Web Search)</span>
+              <TickerSearchCombobox
                 value={newTicker}
-                onChange={e => setNewTicker(e.target.value)}
-                className="w-full bg-white border rounded-xl text-xs px-2.5 py-1.5 focus:outline-hidden"
-              >
-                {Object.keys(TICKER_DETAILS).map(ticker => (
-                  <option key={ticker} value={ticker}>{ticker} - {TICKER_DETAILS[ticker].name}</option>
-                ))}
-              </select>
+                onChange={setNewTicker}
+                placeholder="Type ticker (e.g., AAPL, SPY, VOO)..."
+              />
             </div>
 
-            <div className="md:col-span-4 space-y-1">
+            <div className="md:col-span-3 space-y-1">
               <span className="text-[10px] font-mono text-neutral-400 uppercase">Target Allocation (%)</span>
               <input
                 type="number"
@@ -351,7 +585,7 @@ export default function PortfolioCustomizer({
                 max="100"
                 value={newPct}
                 onChange={e => setNewPct(e.target.value)}
-                className="w-full bg-white border rounded-xl text-xs px-2.5 py-1.5 text-right font-mono focus:outline-hidden"
+                className="w-full bg-white border border-neutral-200 rounded-xl text-xs px-2.5 py-1.5 text-right font-mono focus:outline-hidden focus:ring-1 focus:ring-neutral-400"
               />
             </div>
 
@@ -410,22 +644,26 @@ export default function PortfolioCustomizer({
               <span className="text-xs font-mono text-neutral-400 block uppercase">Log Held Assets Balance</span>
               
               <form onSubmit={handleAddHolding} className="grid grid-cols-12 gap-2 items-end">
-                <select
-                  value={newHoldTicker}
-                  onChange={e => setNewHoldTicker(e.target.value)}
-                  className="col-span-5 bg-neutral-50 border rounded-lg text-xs px-2.5 py-1"
-                >
-                  {Object.keys(TICKER_DETAILS).map(ticker => <option key={ticker} value={ticker}>{ticker}</option>)}
-                </select>
-                <input
-                  type="number"
-                  placeholder="Holding Value $"
-                  value={newHoldVal}
-                  onChange={e => setNewHoldVal(e.target.value)}
-                  className="col-span-5 bg-neutral-50 border rounded-lg text-xs px-2.5 py-1 text-right font-mono"
-                />
-                <button type="submit" className="col-span-2 py-1 bg-neutral-900 text-white rounded-lg text-xs flex items-center justify-center cursor-pointer">
-                  <RefreshCw className="w-3.5 h-3.5" />
+                <div className="col-span-6">
+                  <span className="text-[10px] font-mono text-neutral-400 block mb-1 uppercase">Ticker Asset</span>
+                  <TickerSearchCombobox
+                    value={newHoldTicker}
+                    onChange={setNewHoldTicker}
+                    placeholder="Search holdings..."
+                  />
+                </div>
+                <div className="col-span-4">
+                  <span className="text-[10px] font-mono text-neutral-400 block mb-1 uppercase">Holding Value ($)</span>
+                  <input
+                    type="number"
+                    placeholder="Value $"
+                    value={newHoldVal}
+                    onChange={e => setNewHoldVal(e.target.value)}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-lg text-xs px-2.5 py-1 text-right font-mono focus:outline-hidden"
+                  />
+                </div>
+                <button type="submit" className="col-span-2 py-1.5 bg-neutral-900 text-white rounded-lg text-xs flex items-center justify-center cursor-pointer hover:bg-neutral-800 transition-colors">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin-hover" />
                 </button>
               </form>
 
