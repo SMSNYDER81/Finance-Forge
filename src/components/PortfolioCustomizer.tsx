@@ -40,10 +40,19 @@ export function TickerSearchCombobox({
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close when clicking outside
+  // Close when clicking outside with non-blocking delay when hitting external active components
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        const target = event.target as HTMLElement;
+        if (target && (target.closest('button') || target.closest('input') || target.tagName === 'BUTTON' || target.closest('form'))) {
+          // If they clicked a button or form element outside the combobox, close with a slight delay
+          // so that the button's action triggers fully before the dropdown disappears and re-renders the DOM.
+          setTimeout(() => {
+            setIsOpen(false);
+          }, 180);
+          return;
+        }
         setIsOpen(false);
       }
     }
@@ -365,7 +374,17 @@ export default function PortfolioCustomizer({
       return;
     }
 
-    const cleanTicker = newTicker.trim().toUpperCase();
+    // Capture first segment if input contains a descriptive suffix (e.g. "AABXX - Name")
+    let cleanTicker = newTicker.trim().toUpperCase();
+    if (cleanTicker.includes(' - ')) {
+      cleanTicker = cleanTicker.split(' - ')[0].trim().toUpperCase();
+    }
+
+    if (!cleanTicker) {
+      showError('Please enter or select a valid ticker symbol.');
+      return;
+    }
+
     const exists = activePortfolio.allocation.find(a => a.ticker.toUpperCase() === cleanTicker);
     if (exists) {
       showError(`${cleanTicker} already exists in allocation. Edit or remove it first.`);
@@ -451,7 +470,16 @@ export default function PortfolioCustomizer({
     const value = parseFloat(newHoldVal);
     if (isNaN(value) || value < 0) return;
 
-    const upperClass = newHoldTicker.toUpperCase().trim();
+    let upperClass = newHoldTicker.toUpperCase().trim();
+    if (upperClass.includes(' - ')) {
+      upperClass = upperClass.split(' - ')[0].trim().toUpperCase();
+    }
+
+    if (!upperClass) {
+      showError('Please enter a valid ticker symbol.');
+      return;
+    }
+
     const exists = tickerHoldings.find(h => h.ticker === upperClass);
     if (exists) {
       setTickerHoldings(tickerHoldings.map(h => h.ticker === upperClass ? { ...h, value } : h));
