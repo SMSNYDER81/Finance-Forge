@@ -122,7 +122,7 @@ export function TickerSearchCombobox({
         const encoded = encodeURIComponent(trimmed.toUpperCase());
         let quotes: any[] = [];
         
-        // Server-side robust Finance search route
+        // Attempt 1: Server-side robust Express proxy (for Cloud Run / Node hosts)
         try {
           const res = await fetch(`/api/search?q=${encoded}`);
           if (res.ok) {
@@ -132,7 +132,51 @@ export function TickerSearchCombobox({
             console.warn(`Local server search API returned non-ok status: ${res.status}`);
           }
         } catch (e) {
-          console.error("Local server search API connection failed:", e);
+          console.warn("Local server search API connection failed, trying client-side fallbacks:", e);
+        }
+
+        const targetUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encoded}&quotesCount=10`;
+
+        // Attempt 2: Codetabs fallback proxy
+        if (quotes.length === 0) {
+          try {
+            const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
+            if (res.ok) {
+              const data = await res.json();
+              quotes = data.quotes || [];
+            }
+          } catch (e) {
+            console.warn("Codetabs fallback CORS proxy failed:", e);
+          }
+        }
+
+        // Attempt 3: AllOrigins fallback proxy (wrapping response in JSON wrapper wrapper)
+        if (quotes.length === 0) {
+          try {
+            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+            if (res.ok) {
+              const wrapper = await res.json();
+              if (wrapper && wrapper.contents) {
+                const data = JSON.parse(wrapper.contents);
+                quotes = data.quotes || [];
+              }
+            }
+          } catch (e) {
+            console.warn("AllOrigins fallback CORS proxy failed:", e);
+          }
+        }
+
+        // Attempt 4: cors.lol fallback proxy
+        if (quotes.length === 0) {
+          try {
+            const res = await fetch(`https://cors.lol/?url=${encodeURIComponent(targetUrl)}`);
+            if (res.ok) {
+              const data = await res.json();
+              quotes = data.quotes || [];
+            }
+          } catch (e) {
+            console.warn("cors.lol fallback proxy failed:", e);
+          }
         }
 
         // Standardize output & proactively register incoming symbols
@@ -350,7 +394,7 @@ export default function PortfolioCustomizer({
   // Add allocation item
   const handleAddAllocation = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activePortfolio || !newPct) return;
+    if (!newPct) return;
     const pct = parseInt(newPct);
     if (isNaN(pct) || pct <= 0) return;
 
@@ -370,10 +414,30 @@ export default function PortfolioCustomizer({
       return;
     }
 
-    const exists = activePortfolio.allocation.find(a => a.ticker.toUpperCase() === cleanTicker);
+    let targetPortfolio = activePortfolio;
+    let nextPortfolios = [...portfolios];
+
+    // Auto-create a custom portfolio if they cleared the list or are in a clean slate
+    if (!targetPortfolio) {
+      const defaultPortName = 'Custom Portfolio Mix';
+      const freshPortfolio: Portfolio = {
+        portfolio_name: defaultPortName,
+        allocation: []
+      };
+      nextPortfolios.push(freshPortfolio);
+      targetPortfolio = freshPortfolio;
+      setActivePortfolioName(defaultPortName);
+    }
+
+    const exists = targetPortfolio.allocation.find(a => a.ticker.toUpperCase() === cleanTicker);
     if (exists) {
       showError(`${cleanTicker} already exists in allocation. Edit or remove it first.`);
       return;
+    }
+
+    // If typing manually, dynamically register ticker stats so standard classifications apply safely!
+    if (!TICKER_DETAILS[cleanTicker] && !DYNAMIC_TICKER_REGISTRY[cleanTicker]) {
+      registerDynamicTicker(cleanTicker, `${cleanTicker} Asset`, 'EQUITY');
     }
 
     const stats = getTickerStats(cleanTicker);
@@ -383,8 +447,8 @@ export default function PortfolioCustomizer({
       asset_class: stats.class
     };
 
-    const nextPortfolios = portfolios.map(p => {
-      if (p.portfolio_name === activePortfolio.portfolio_name) {
+    const finalPortfolios = nextPortfolios.map(p => {
+      if (p.portfolio_name === targetPortfolio.portfolio_name) {
         return {
           ...p,
           allocation: [...p.allocation, item]
@@ -393,7 +457,7 @@ export default function PortfolioCustomizer({
       return p;
     });
 
-    onPortfoliosChange(nextPortfolios);
+    onPortfoliosChange(finalPortfolios);
     
     // Clear the input fields for a highly responsive visual confirmation
     setNewTicker('');
@@ -463,6 +527,11 @@ export default function PortfolioCustomizer({
     if (!upperClass) {
       showError('Please enter a valid ticker symbol.');
       return;
+    }
+
+    // Dynamic registration of unknown/custom assets typed manually
+    if (!TICKER_DETAILS[upperClass] && !DYNAMIC_TICKER_REGISTRY[upperClass]) {
+      registerDynamicTicker(upperClass, `${upperClass} Asset`, 'EQUITY');
     }
 
     const exists = tickerHoldings.find(h => h.ticker === upperClass);

@@ -13,6 +13,17 @@ export const TICKER_DETAILS: Record<string, { name: string, return: number, vola
   VEA: { name: 'Vanguard Developed Markets Index ETF', return: 0.072, volatility: 0.160, class: 'Intl Equity' },
   VWO: { name: 'Vanguard FTSE Emerging Markets ETF', return: 0.078, volatility: 0.195, class: 'Intl Equity' },
   
+  // Core Mutual Funds / Index Trackers
+  FXAIX: { name: 'Fidelity 500 Index Fund', return: 0.098, volatility: 0.150, class: 'US Equity' },
+  VFIAX: { name: 'Vanguard 500 Index Fund', return: 0.098, volatility: 0.150, class: 'US Equity' },
+  FSKAX: { name: 'Fidelity Total Market Index Fund', return: 0.095, volatility: 0.150, class: 'US Equity' },
+  VTSAX: { name: 'Vanguard Total Stock Market Index Fund', return: 0.095, volatility: 0.150, class: 'US Equity' },
+  SWTSX: { name: 'Schwab Total Stock Market Index Fund', return: 0.095, volatility: 0.150, class: 'US Equity' },
+  SWPPX: { name: 'Schwab S&P 500 Index Fund', return: 0.098, volatility: 0.150, class: 'US Equity' },
+  FZROX: { name: 'Fidelity ZERO Total Market Index Fund', return: 0.095, volatility: 0.150, class: 'US Equity' },
+  FNILX: { name: 'Fidelity ZERO Large Cap Index Fund', return: 0.098, volatility: 0.150, class: 'US Equity' },
+  FSTVX: { name: 'Fidelity Total Market Index Fund', return: 0.094, volatility: 0.150, class: 'US Equity' },
+
   // Dividend & Factor ETFs
   SCHD: { name: 'Schwab U.S. Dividend Equity ETF', return: 0.092, volatility: 0.135, class: 'US Equity' },
   VYM: { name: 'Vanguard High Dividend Yield ETF', return: 0.088, volatility: 0.138, class: 'US Equity' },
@@ -20,17 +31,22 @@ export const TICKER_DETAILS: Record<string, { name: string, return: number, vola
   VUG: { name: 'Vanguard Growth ETF', return: 0.120, volatility: 0.180, class: 'US Equity' },
   VTV: { name: 'Vanguard Value ETF', return: 0.085, volatility: 0.140, class: 'US Equity' },
 
-  // Fixed Income (Bonds & Treasuries)
+  // Fixed Income, Cash, Municipal & Money Market Funds
   BND: { name: 'Vanguard Total Bond Market ETF', return: 0.042, volatility: 0.055, class: 'Fixed Income' },
   AGG: { name: 'iShares Core U.S. Aggregate Bond ETF', return: 0.040, volatility: 0.050, class: 'Fixed Income' },
   GOVT: { name: 'iShares U.S. Treasury Bond ETF', return: 0.038, volatility: 0.045, class: 'Fixed Income' },
   IEF: { name: 'iShares 7-10 Year Treasury Bond ETF', return: 0.040, volatility: 0.065, class: 'Fixed Income' },
   TLT: { name: 'iShares 20+ Year Treasury Bond ETF', return: 0.045, volatility: 0.140, class: 'Fixed Income' },
   BIL: { name: 'SPDR Bloomberg 1-3 Month T-Bill ETF', return: 0.035, volatility: 0.008, class: 'Fixed Income' },
+  SGOV: { name: 'iShares 0-3 Month Treasury Bond ETF', return: 0.046, volatility: 0.006, class: 'Fixed Income' },
   LQD: { name: 'iShares iBoxx $ Investment Grade Corporate Bond', return: 0.052, volatility: 0.080, class: 'Fixed Income' },
   HYG: { name: 'iShares iBoxx $ High Yield Corporate Bond', return: 0.065, volatility: 0.105, class: 'Fixed Income' },
+  SPAXX: { name: 'Fidelity Government Money Market Fund (Core)', return: 0.048, volatility: 0.005, class: 'Fixed Income' },
+  VMFXX: { name: 'Vanguard Federal Money Market Fund (Core)', return: 0.050, volatility: 0.005, class: 'Fixed Income' },
+  FDLXX: { name: 'Fidelity Treasury Money Market Fund', return: 0.047, volatility: 0.005, class: 'Fixed Income' },
+  AABXX: { name: 'Goldman Sachs Financial Square Government Fund', return: 0.047, volatility: 0.005, class: 'Fixed Income' },
 
-  // Selected High-Demand Equities
+  // Selected High-Demand Equities & Technology Leaders
   AAPL: { name: 'Apple Inc.', return: 0.130, volatility: 0.220, class: 'US Equity' },
   MSFT: { name: 'Microsoft Corporation', return: 0.135, volatility: 0.210, class: 'US Equity' },
   GOOGL: { name: 'Alphabet Inc. (Class A)', return: 0.122, volatility: 0.230, class: 'US Equity' },
@@ -41,6 +57,10 @@ export const TICKER_DETAILS: Record<string, { name: string, return: number, vola
   JPM: { name: 'JPMorgan Chase & Co.', return: 0.098, volatility: 0.185, class: 'US Equity' },
   V: { name: 'Visa Inc.', return: 0.110, volatility: 0.165, class: 'US Equity' },
   LLY: { name: 'Eli Lilly and Company', return: 0.145, volatility: 0.240, class: 'US Equity' },
+  AMD: { name: 'Advanced Micro Devices, Inc.', return: 0.140, volatility: 0.360, class: 'US Equity' },
+  NFLX: { name: 'Netflix, Inc.', return: 0.120, volatility: 0.310, class: 'US Equity' },
+  PLTR: { name: 'Palantir Technologies Inc.', return: 0.150, volatility: 0.420, class: 'US Equity' },
+  "BRK.B": { name: 'Berkshire Hathaway Inc. Class B', return: 0.102, volatility: 0.135, class: 'US Equity' },
 
   // Crypto Assets
   BTC: { name: 'Bitcoin (BTC)', return: 0.250, volatility: 0.550, class: 'Crypto' },
