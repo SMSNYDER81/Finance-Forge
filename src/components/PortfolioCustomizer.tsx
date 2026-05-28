@@ -51,6 +51,18 @@ export function TickerSearchCombobox({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Sync text input with parent state when dropdown is NOT open
+  useEffect(() => {
+    if (!isOpen) {
+      if (value) {
+        const stats = getTickerStats(value);
+        setQuery(value ? `${value} - ${stats.name}` : '');
+      } else {
+        setQuery('');
+      }
+    }
+  }, [value, isOpen]);
+
   // Filter local & registered tickers based on query
   const localMatchResults = useMemo(() => {
     const term = query.trim().toUpperCase();
@@ -59,7 +71,7 @@ export function TickerSearchCombobox({
     // Check pre-coded TICKER_DETAILS
     Object.keys(TICKER_DETAILS).forEach(sym => {
       const details = TICKER_DETAILS[sym];
-      if (sym.includes(term) || details.name.toUpperCase().includes(term)) {
+      if (!term || sym.includes(term) || details.name.toUpperCase().includes(term)) {
         matches.push({
           symbol: sym,
           name: details.name,
@@ -72,8 +84,7 @@ export function TickerSearchCombobox({
     // Check dynamically registered tickers
     Object.keys(DYNAMIC_TICKER_REGISTRY).forEach(sym => {
       const details = DYNAMIC_TICKER_REGISTRY[sym];
-      if (sym.includes(term) || details.name.toUpperCase().includes(term)) {
-        // Prevent duplicates
+      if (!term || sym.includes(term) || details.name.toUpperCase().includes(term)) {
         if (!TICKER_DETAILS[sym]) {
           matches.push({
             symbol: sym,
@@ -90,7 +101,8 @@ export function TickerSearchCombobox({
 
   // Handle Debounced public API Search
   useEffect(() => {
-    if (!query) {
+    const trimmed = query.trim();
+    if (!trimmed || trimmed.includes(' - ')) {
       setApiResults([]);
       return;
     }
@@ -98,27 +110,58 @@ export function TickerSearchCombobox({
     const timer = setTimeout(async () => {
       setIsLoadingApi(true);
       try {
-        const encoded = encodeURIComponent(query.trim().toUpperCase());
-        const response = await fetch(`https://corsproxy.io/?url=https%3A%2F%2Fquery1.finance.yahoo.com%2Fv1%2Ffinance%2Fsearch%3Fq%3D${encoded}`);
-        if (response.ok) {
-          const data = await response.json();
-          const quotes = data.quotes || [];
-          // Map to standard layout
-          const results = quotes
-            .filter((q: any) => q.symbol)
-            .map((q: any) => ({
-              symbol: q.symbol.toUpperCase(),
-              name: q.shortname || q.longname || q.symbol,
-              type: q.quoteType || 'EQUITY'
-            }));
-          setApiResults(results);
+        const encoded = encodeURIComponent(trimmed.toUpperCase());
+        let quotes: any[] = [];
+        
+        // Proxy A: corsproxy.io
+        try {
+          const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v1/finance/search?q=${encoded}&quotesCount=10`)}`);
+          if (res.ok) {
+            const data = await res.json();
+            quotes = data.quotes || [];
+          }
+        } catch (e) {
+          console.warn("Primary CORS proxy failed, trying backup:", e);
         }
+
+        // Proxy B: api.allorigins.win (only if Proxy A fetched nothing)
+        if (quotes.length === 0) {
+          try {
+            const target = `https://query1.finance.yahoo.com/v1/finance/search?q=${encoded}&quotesCount=10`;
+            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(target)}`);
+            if (res.ok) {
+              const wrapper = await res.json();
+              if (wrapper && wrapper.contents) {
+                const data = JSON.parse(wrapper.contents);
+                quotes = data.quotes || [];
+              }
+            }
+          } catch (e) {
+            console.error("Backup CORS proxy failed too:", e);
+          }
+        }
+
+        // Standardize output & proactively register incoming symbols
+        const results = quotes
+          .filter((q: any) => q && q.symbol)
+          .map((q: any) => {
+            const symbol = q.symbol.toUpperCase().trim();
+            const name = q.shortname || q.longname || q.symbol;
+            const type = q.quoteType || 'EQUITY';
+            
+            // Register immediately in registry so stats are available for direct clicking
+            registerDynamicTicker(symbol, name, type);
+            
+            return { symbol, name, type };
+          });
+
+        setApiResults(results);
       } catch (err) {
-        console.error("Public security search index failure:", err);
+        console.error("Failed to query public ticker autosuggest indexes:", err);
       } finally {
         setIsLoadingApi(false);
       }
-    }, 400); // 400ms debounce
+    }, 450);
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -129,12 +172,10 @@ export function TickerSearchCombobox({
 
   const handleSelect = (symbol: string, name: string, type?: string) => {
     const cleanSym = symbol.toUpperCase().trim();
-    // Register dynamically if not already indexed
     if (!TICKER_DETAILS[cleanSym] && !DYNAMIC_TICKER_REGISTRY[cleanSym]) {
       registerDynamicTicker(cleanSym, name, type);
     }
     onChange(cleanSym);
-    setQuery('');
     setIsOpen(false);
   };
 
@@ -149,11 +190,14 @@ export function TickerSearchCombobox({
             value={isOpen ? query : (value ? `${value} - ${stats.name}` : '')}
             onFocus={() => {
               setIsOpen(true);
-              setQuery('');
+              setQuery(value);
             }}
             onChange={(e) => {
-              setQuery(e.target.value);
+              const val = e.target.value;
+              setQuery(val);
               setIsOpen(true);
+              // Update parent in real-time as they type to make certain clicking Assign holds what was typed!
+              onChange(val.toUpperCase().trim());
             }}
             className="w-full bg-white border border-neutral-200 rounded-xl text-xs pl-8 pr-12 py-1.5 focus:outline-hidden focus:ring-1 focus:ring-neutral-400 text-neutral-800"
           />
@@ -166,7 +210,11 @@ export function TickerSearchCombobox({
         {isOpen && (
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              onChange('');
+              setQuery('');
+              setIsOpen(false);
+            }}
             className="text-[10px] text-neutral-500 hover:text-neutral-900 border px-1.5 py-1 rounded bg-neutral-50 cursor-pointer"
           >
             Clear
@@ -186,7 +234,7 @@ export function TickerSearchCombobox({
                 <button
                   key={match.symbol}
                   type="button"
-                  onClick={() => handleSelect(match.symbol, match.name)}
+                  onMouseDown={() => handleSelect(match.symbol, match.name)}
                   className="w-full flex items-center justify-between text-left px-2.5 py-1.5 hover:bg-neutral-50 rounded-lg text-xs cursor-pointer"
                 >
                   <div className="flex flex-col">
@@ -211,19 +259,19 @@ export function TickerSearchCombobox({
               )}
 
               {apiResults.slice(0, 10).map((apiItem) => {
-                // Skip if already rendered in local matches
+                // Skip duplicate rendering
                 if (localMatchResults.some((m) => m.symbol === apiItem.symbol)) return null;
 
                 return (
                   <button
                     key={apiItem.symbol}
                     type="button"
-                    onClick={() => handleSelect(apiItem.symbol, apiItem.name, apiItem.type)}
+                    onMouseDown={() => handleSelect(apiItem.symbol, apiItem.name, apiItem.type)}
                     className="w-full flex items-center justify-between text-left px-2.5 py-1.5 hover:bg-neutral-50 rounded-lg text-xs cursor-pointer"
                   >
                     <div className="flex flex-col">
                       <span className="font-semibold text-neutral-800 flex items-center gap-1">
-                        <Globe className="w-2.5 h-2.5 text-blue-500 animate-pulse" />
+                        <Globe className="w-2.5 h-2.5 text-indigo-500 animate-pulse" />
                         {apiItem.symbol}
                       </span>
                       <span className="text-[10px] text-neutral-400 line-clamp-1">{apiItem.name}</span>
@@ -261,6 +309,16 @@ export default function PortfolioCustomizer({
   onPortfoliosChange,
   investmentsTotal
 }: PortfolioCustomizerProps) {
+  // Local iframe-safe state-based error system
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const showError = (message: string) => {
+    setActionError(message);
+    setTimeout(() => {
+      setActionError(null);
+    }, 4500);
+  };
+
   // Holdings log state for rebalancing math
   const [tickerHoldings, setTickerHoldings] = useState<{ ticker: string; value: number }[]>([
     { ticker: 'VTI', value: 75000 },
@@ -268,7 +326,7 @@ export default function PortfolioCustomizer({
     { ticker: 'BTC', value: 8000 }
   ]);
 
-  const [newHoldTicker, setNewHoldTicker] = useState('BND');
+  const [newHoldTicker, setNewHoldTicker] = useState('');
   const [newHoldVal, setNewHoldVal] = useState('');
 
   // Active Portfolio select
@@ -276,7 +334,7 @@ export default function PortfolioCustomizer({
 
   // Custom portfolio editing states
   const [newPortName, setNewPortName] = useState('');
-  const [newTicker, setNewTicker] = useState('VTI');
+  const [newTicker, setNewTicker] = useState('');
   const [newPct, setNewPct] = useState('10');
 
   const activePortfolio = useMemo(() => {
@@ -301,15 +359,21 @@ export default function PortfolioCustomizer({
     const pct = parseInt(newPct);
     if (isNaN(pct) || pct <= 0) return;
 
-    const exists = activePortfolio.allocation.find(a => a.ticker.toUpperCase() === newTicker.toUpperCase());
-    if (exists) {
-      alert(`${newTicker} already exists in allocation. Edit or remove it first.`);
+    if (!newTicker.trim()) {
+      showError('Please search or enter a valid ticker first.');
       return;
     }
 
-    const stats = getTickerStats(newTicker);
+    const cleanTicker = newTicker.trim().toUpperCase();
+    const exists = activePortfolio.allocation.find(a => a.ticker.toUpperCase() === cleanTicker);
+    if (exists) {
+      showError(`${cleanTicker} already exists in allocation. Edit or remove it first.`);
+      return;
+    }
+
+    const stats = getTickerStats(cleanTicker);
     const item: PortfolioAllocation = {
-      ticker: newTicker.toUpperCase(),
+      ticker: cleanTicker,
       percentage: pct,
       asset_class: stats.class
     };
@@ -323,7 +387,12 @@ export default function PortfolioCustomizer({
       }
       return p;
     });
+
     onPortfoliosChange(nextPortfolios);
+    
+    // Clear the input fields for a highly responsive visual confirmation
+    setNewTicker('');
+    setNewPct('10');
   };
 
   const handleRemoveAllocation = (ticker: string) => {
@@ -345,7 +414,7 @@ export default function PortfolioCustomizer({
 
     const exists = portfolios.find(p => p.portfolio_name.toLowerCase() === newPortName.toLowerCase());
     if (exists) {
-      alert('Portfolio name already exists.');
+      showError('Portfolio name already exists.');
       return;
     }
 
@@ -362,7 +431,7 @@ export default function PortfolioCustomizer({
 
   const handleDeletePortfolio = (name: string) => {
     if (portfolios.length <= 1) {
-      alert('You must maintain at least one portfolio design.');
+      showError('You must maintain at least one portfolio design.');
       return;
     }
     const nextList = portfolios.filter(p => p.portfolio_name !== name);
@@ -373,7 +442,11 @@ export default function PortfolioCustomizer({
   // Holdings manipulation
   const handleAddHolding = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newHoldTicker.trim() || !newHoldVal) return;
+    if (!newHoldTicker.trim()) {
+      showError('Please search or type a ticker model first.');
+      return;
+    }
+    if (!newHoldVal) return;
     const value = parseFloat(newHoldVal);
     if (isNaN(value) || value < 0) return;
 
@@ -384,6 +457,9 @@ export default function PortfolioCustomizer({
     } else {
       setTickerHoldings([...tickerHoldings, { ticker: upperClass, value }]);
     }
+    
+    // Clear holds input on success
+    setNewHoldTicker('');
     setNewHoldVal('');
   };
 
@@ -450,6 +526,13 @@ export default function PortfolioCustomizer({
 
   return (
     <div className="space-y-8" id="portfolio-allocator-panel">
+      {actionError && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs px-4 py-3 rounded-2xl flex items-start gap-2 animate-fade-in shadow-xs">
+          <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+          <span className="font-medium">{actionError}</span>
+        </div>
+      )}
+
       {/* Portfolio Navigator */}
       <div className="bg-white border border-neutral-200 rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="space-y-1">
