@@ -122,32 +122,17 @@ export function TickerSearchCombobox({
         const encoded = encodeURIComponent(trimmed.toUpperCase());
         let quotes: any[] = [];
         
-        // Proxy A: corsproxy.io
+        // Server-side robust Finance search route
         try {
-          const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v1/finance/search?q=${encoded}&quotesCount=10`)}`);
+          const res = await fetch(`/api/search?q=${encoded}`);
           if (res.ok) {
             const data = await res.json();
             quotes = data.quotes || [];
+          } else {
+            console.warn(`Local server search API returned non-ok status: ${res.status}`);
           }
         } catch (e) {
-          console.warn("Primary CORS proxy failed, trying backup:", e);
-        }
-
-        // Proxy B: api.allorigins.win (only if Proxy A fetched nothing)
-        if (quotes.length === 0) {
-          try {
-            const target = `https://query1.finance.yahoo.com/v1/finance/search?q=${encoded}&quotesCount=10`;
-            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(target)}`);
-            if (res.ok) {
-              const wrapper = await res.json();
-              if (wrapper && wrapper.contents) {
-                const data = JSON.parse(wrapper.contents);
-                quotes = data.quotes || [];
-              }
-            }
-          } catch (e) {
-            console.error("Backup CORS proxy failed too:", e);
-          }
+          console.error("Local server search API connection failed:", e);
         }
 
         // Standardize output & proactively register incoming symbols
