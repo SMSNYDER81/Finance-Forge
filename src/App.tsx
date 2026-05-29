@@ -183,7 +183,7 @@ export default function App() {
 
       {/* Dynamic eviction alert banner */}
       {showEvictionAlert && isDataDirty && (
-        <div className="bg-amber-650 text-amber-900 bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between text-xs font-medium relative transition-all animate-slide-in">
+        <div className="bg-amber-650 text-amber-900 bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between text-xs font-medium relative transition-all animate-slide-in print:hidden">
           <div className="flex items-center gap-2 max-w-4xl mx-auto w-full">
             <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 animate-pulse" />
             <span>
@@ -197,7 +197,7 @@ export default function App() {
       )}
 
       {/* Global Sandbox Navigation Bar */}
-      <header className="bg-white border-b border-neutral-200/80 sticky top-0 z-40">
+      <header className="bg-white border-b border-neutral-200/80 sticky top-0 z-40 print:hidden">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
           
           {/* Logo & Branding */}
@@ -230,10 +230,10 @@ export default function App() {
       </header>
 
       {/* Main Container workspace */}
-      <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-8 flex-grow flex flex-col lg:flex-row gap-8">
+      <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-8 flex-grow flex flex-col lg:flex-row gap-8 print:block print:p-0 print:gap-0">
         
         {/* Navigation Sidebar & Setup Module */}
-        <aside className="w-full lg:w-64 flex flex-col gap-6 flex-shrink-0">
+        <aside className="w-full lg:w-64 flex flex-col gap-6 flex-shrink-0 print:hidden">
           
           {/* Core Menu Tabs */}
           <div className="bg-white rounded-3xl border border-neutral-200 p-4 space-y-1.5 shadow-xs">
@@ -378,7 +378,7 @@ export default function App() {
         </aside>
 
         {/* Dynamic Panel Canvas */}
-        <section className="flex-grow">
+        <section className="flex-grow print:w-full print:p-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -425,6 +425,7 @@ export default function App() {
                   portfolios={state.portfolios}
                   totalEquity={investmentAssets}
                   annualSpendingTarget={state.user_profile.annual_spending_target}
+                  onPortfoliosChange={(portfolios) => updateState({ portfolios })}
                 />
               )}
 
@@ -461,7 +462,7 @@ export default function App() {
       </main>
 
       {/* Sandboxed Local footer metadata */}
-      <footer className="bg-white border-t border-neutral-200 py-6 text-center text-[10px] font-mono text-neutral-400 select-none">
+      <footer className="bg-white border-t border-neutral-200 py-6 text-center text-[10px] font-mono text-neutral-400 select-none print:hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2.5">
           <span>FinanceForge v1.1.0 • Privacy Secured Cockpit</span>
           <span className="max-w-md sm:text-right text-[9px] text-neutral-400 leading-normal font-sans">
